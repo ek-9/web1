@@ -7,6 +7,14 @@ HTTPException : 에러를 발생시켜 FastAPI에게 알아서 에러 응답을 
 JSONResponse : 원하는 JSON을 직접 만들어 반환하는 것/ 성공 실패 여부와 상관없이 응답 직접 반영
 '''
 
+'''
+Users
+1. 회원가입
+2. 로그인
+3. 유저 정보 수정
+4. 유저 정보 삭제
+'''
+
 router = APIRouter(prefix="/users")
 
 

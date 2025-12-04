@@ -3,6 +3,11 @@ from pydantic import BaseModel
 from controller import userController
 from fastapi import APIRouter, HTTPException, status
 
+class Reply(BaseModel):
+    user_id: int
+    content: str
+    created: datetime.datetime = datetime.datetime.now()
+
 class Post(BaseModel):
     post_id: int
     title: str
@@ -11,8 +16,12 @@ class Post(BaseModel):
     # image: str
     liked: int
     view: int
-    reply: list
+    reply: Reply
     created: datetime.datetime = datetime.datetime.now()
+
+class PostDetails(BaseModel) :
+    title: str
+    content: str
 
 class PostRequest(BaseModel):
     title: str
@@ -23,10 +32,7 @@ class PostEditRequest(BaseModel):
     title: str
     content: str
 
-class Reply(BaseModel):
-    user_id: int
-    content: str
-    created: datetime.datetime = datetime.datetime.now()
+
 
 
 POST_ID_GLOBAL = 0
@@ -53,11 +59,17 @@ def createPost(req: PostRequest) :
         author=req.author,
         created=datetime.datetime.now(),
         liked=0,
-        view=0,
-        reply=[]
+        view=0
+        # reply=[]
     )
     post_list[POST_ID_GLOBAL] = post
     return POST_ID_GLOBAL
+
+def detailPost(p_id: int) :
+    if p_id not in post_list:
+        raise HTTPException(status_code=400, detail="error")
+    return post_list[p_id]
+
 
 def editPost(req: PostEditRequest, post_id: int):
     if post_id not in post_list:
