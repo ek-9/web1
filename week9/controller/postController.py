@@ -1,9 +1,10 @@
 import datetime
 from pydantic import BaseModel, Field
 from week9.controller import userController
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from week9.model.posts import Post, Reply
 from week9.schema.postSchema import ReplyRequest, PostEditRequest, PostDetails, PostRequest
+import os
 
 
 POST_ID_GLOBAL = 0
@@ -18,11 +19,12 @@ def find_all_post() :
     return list(post_list.values())
 
 
-def createPost(req: PostRequest) :
+def createPost(req: PostRequest, content_image: UploadFile) :
     global POST_ID_GLOBAL
     if req.title == "" or req.title is None :
         raise HTTPException(status_code=401, detail="제목을 입력해주세요")
     POST_ID_GLOBAL += 1
+    image_path = save_image(POST_ID_GLOBAL, content_image)
     post = Post(
         post_id=POST_ID_GLOBAL,
         title=req.title,
@@ -30,9 +32,11 @@ def createPost(req: PostRequest) :
         author=req.author,
         created=Field(default_factory=datetime.now),
         liked=0,
-        view=0
-        # reply=[]
+        view=0,
+        content_image = image_path,
+        reply=[]
     )
+
     post_list[POST_ID_GLOBAL] = post
     return POST_ID_GLOBAL
 
@@ -42,11 +46,14 @@ def detailPost(p_id: int) :
     return post_list[p_id]
 
 
-def editPost(req: PostEditRequest, post_id: int):
+def editPost(req: PostEditRequest, post_id: int, content_image: UploadFile):
     if post_id not in post_list:
         raise HTTPException(status_code=404, detail="Post not found")
     post_list[post_id].title = req.title
     post_list[post_id].content = req.content
+    if content_image:
+        image_path = save_image(post_id, content_image)
+        post_list[post_id].content_image = image_path
     return post_id
 
 def deletePost(post_id: int):
@@ -73,7 +80,7 @@ def createReply(req: ReplyRequest, post_id: int):
     post_list[post_id].reply.append(new_reply)
     return post_id
 
-def editReply(post_id: int, r_id: int, req: Reply):
+def editReply(post_id: int, r_id: int, req: ReplyRequest):
     if post_id not in post_list :
         raise HTTPException(status_code=404, detail="Post not found")
     find_post = post_list[post_id]
@@ -84,7 +91,7 @@ def editReply(post_id: int, r_id: int, req: Reply):
 
 def deleteReply(post_id: int, r_id: int) :
     find_post = post_list[post_id]
-    if r_id < len(find_post.reply) :
+    if r_id >= len(find_post.reply) :
         raise HTTPException(status_code=400, detail='서버오류')
     find_post.pop(r_id)
     return
@@ -117,8 +124,22 @@ def increaseLiked(u_id: int, p_id:int) :
 
     return p_id
 
+UPLOAD_DIR = "static/content_images"
 
+def save_image(post_id: int, file: UploadFile):
+    if file is None:
+        return None
 
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    file_ext = file.filename.split(".")[-1]
+    filename = f"post_{post_id}.{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
+    return file_path  # 이 경로만 DB에 저장
 
 
 

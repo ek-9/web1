@@ -3,14 +3,15 @@ from pydantic import BaseModel, Field
 
 class Post(BaseModel):
     post_id: int
-    title: str
+    title: str = Field(max_length=26)
     content: str
     author: int
     # image: str
     liked: int
     view: int
-    reply: dict
+    reply: list = []
     created: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    content_image: str
 
 
 

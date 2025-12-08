@@ -1,8 +1,7 @@
-
 from fastapi import APIRouter, HTTPException, status, UploadFile
 import os
 from week9.model.users import User
-from week9.schema.userSchema import UserRequest, EditUserRequest, loginUserRequest, EditUserPasswordRequest
+from week9.schema.userSchema import UserRequest, EditUserRequest, LoginUserRequest, EditUserPasswordRequest
 
 
 user_list = dict()
@@ -26,7 +25,7 @@ def createUser(userDao: UserRequest, profile_image: UploadFile) -> int:
         raise HTTPException(status_code=402, detail="닉네임은 공백없이 작성해주세요")
 
     USER_ID_GLOBAL += 1
-    image_path = save_image(profile_image)
+    image_path = save_image(USER_ID_GLOBAL,profile_image)
     user = User(
         user_id=USER_ID_GLOBAL,
         email= userDao.email,
@@ -37,7 +36,7 @@ def createUser(userDao: UserRequest, profile_image: UploadFile) -> int:
     user_list[USER_ID_GLOBAL] = user
     return USER_ID_GLOBAL
 
-def loginUser(loginUser: loginUserRequest) -> int :
+def loginUser(loginUser: LoginUserRequest) -> int :
     '''
     1. email 보고 사람 찾기
     2. password 일치여부 확인
@@ -48,6 +47,11 @@ def loginUser(loginUser: loginUserRequest) -> int :
     '''
     email = loginUser.email
     password = loginUser.password
+    if loginUser.email == "" or loginUser.email is None :
+        raise HTTPException(status_code=401, detail="이메일을 입력해주세요")
+
+    if loginUser.password == "" or loginUser.password is None :
+        raise HTTPException(status_code=401, detail="비밀번호를 입력해주세요")
 
     for u_id, user in user_list.items() :
         # 발견한 경우
@@ -59,16 +63,16 @@ def loginUser(loginUser: loginUserRequest) -> int :
     # 이메일도 발견 못한경우
     raise HTTPException(status_code=401, detail="존재하지 않는 이메일입니다.")
 
-def editUser(user_id: int, request: EditUserRequest) -> int:
+def editUser(user_id: int, request: EditUserRequest, profile_image: UploadFile) -> int:
     # user info
     # change nickname
     if len(user_list) <= user_id :
         raise HTTPException(status_code=404, detail="User Not Found")
-    if request.nickname == "" or request.nickname is None :
-        raise HTTPException(status_code=400, detail="닉네임을 정확히 입력해주세요")
-    if not validate_nickname(request.nickname) :
-        raise HTTPException(status_code= 402, detail = "닉네임은 공백없이 작성해주세요")
+    validate_nickname(user_id, request.nickname)
     user_list[user_id].nickname = request.nickname
+    if profile_image:
+        image_path = save_image(user_id, profile_image)
+        user_list[user_id].profile_image = image_path
     return user_id
 
 def editpw(user_id:int, request: EditUserPasswordRequest) :
@@ -104,23 +108,27 @@ def valid_password(pw: str):
         return False
 
 # 닉네임 검증로직
-def validate_nickname(nickname: str) :
-    for nm in nickname :
-        if nm == ' ' :
-            return False
-    return True
+def validate_nickname(user_id: int, nickname: str) :
+    if not nickname :
+        raise HTTPException(status_code=400, detail="닉네임을 정확히 입력해주세요")
+    if " " in nickname:
+        raise HTTPException(status_code=400, detail="닉네임에 띄어쓰기 금지")
+    for idx, ul in enumerate(user_list) :
+        if idx != user_id and ul.nickname == nickname :
+            raise HTTPException(status_code=401, detail="이미 존재하는 닉네임입니다.")
+    return
 
 UPLOAD_DIR = "static/profile_images"
 
 # 프로필사진 저장
-def save_image(file: UploadFile):
+def save_image(user_id: int, file: UploadFile):
     if file is None:
         return None
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     file_ext = file.filename.split(".")[-1]
-    filename = f"user_{USER_ID_GLOBAL}.{file_ext}"
+    filename = f"user_{user_id}.{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, filename)
 
     with open(file_path, "wb") as f:

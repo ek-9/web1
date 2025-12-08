@@ -6,12 +6,12 @@ class UserRequest(BaseModel) :
     password: str
     nickname: str
 
-class loginUserRequest(BaseModel) :
+class LoginUserRequest(BaseModel) :
     email: EmailStr
     password: str
 
 class EditUserRequest(BaseModel):
-    user_id: int
+    email: EmailStr
     nickname: str
 
 class EditUserPasswordRequest(BaseModel):

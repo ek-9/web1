@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, Form, File
 from week9.controller import userController
 import os
 from pydantic import BaseModel, EmailStr, Field
+from week9.schema.userSchema import UserRequest, EditUserRequest, LoginUserRequest, EditUserPasswordRequest
 
 '''
 HTTPException : 에러를 발생시켜 FastAPI에게 알아서 에러 응답을 만들라고 하는 것/ 에러 상황을 명확히 알림
@@ -27,11 +28,12 @@ return : user_id
 '''
 @router.post("/create")
 def createUser(
+        req: UserRequest,
         email: EmailStr = Form(...),
         password: str = Form(...),
         nickname: str = Form(...),
         profile_image: UploadFile = File(None)) :
-    req = userController.UserRequest(
+    req = UserRequest(
         email = email,
         password=password,
         nickname=nickname
@@ -50,18 +52,21 @@ def createUser(
     200 : {"description" : "success"},
     400 : {"description" : "wrong request"}
 })
-def loginUser(request: userController.loginUserRequest):
+def loginUser(request: LoginUserRequest):
     user_id = userController.loginUser(request)
     return {"user_id": user_id}
 
-
 @router.patch("/edit/{user_id}")
-def editUser(user_id: int, request: userController.EditUserRequest):
-    editUser_id = userController.editUser(user_id, request)
-    return {"user_id": editUser_id}
+def editUser(user_id: int,
+             nickname: str,
+             profile_image: UploadFile = File(None)
+             ):
+    req = EditUserRequest(nickname=nickname)
+    result = userController.editUser(user_id, req, profile_image)
+    return {"user_id": result}
 
 @router.patch("edit/password/{user_id}")
-def edit_user_password(user_id: int, request: userController.EditUserPasswordRequest):
+def edit_user_password(user_id: int, request: EditUserPasswordRequest):
     editUser_id = userController.editpw(user_id, request)
     return {"user_id": editUser_id}
 

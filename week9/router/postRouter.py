@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, Form, File
 from week9.controller import postController
+from week9.schema.postSchema import PostRequest, PostDetails, PostEditRequest, ReplyRequest
 
 '''
 Posts
@@ -25,8 +26,18 @@ def list() :
     return list(postController.post_list.values())
 
 @router.post("/create")
-def create(req: postController.PostRequest) :
-    post_id = postController.createPost(req)
+def create(
+        title: str,
+        content: str,
+        author: int,
+        content_image: UploadFile = File(None),
+    ) :
+    req = PostRequest(
+        title = title,
+        content = content,
+        author = author
+    )
+    post_id = postController.createPost(req, content_image)
     return {"post_id" : post_id}
 
 
@@ -36,8 +47,17 @@ def details(p_id: int):
 
 
 @router.patch("/edit/{post_id}")
-def edit(req: postController.PostEditRequest, post_id: int) :
-    post_id = postController.editPost(req, post_id)
+def edit(
+        post_id: int,
+        title: str,
+        content: str,
+        content_image: UploadFile = File(None)
+    ):
+    req = PostEditRequest(
+        title=title,
+        content=content
+    )
+    post_id = postController.editPost(req, post_id, content_image)
     return {"post_id" : post_id}
 
 @router.delete("/delete/{post_id}")
@@ -45,12 +65,12 @@ def delete(post_id: int):
     return postController.deletePost(post_id)
 
 @router.post("/details/{post_id}/reply")
-def create_reply(post_id: int, req: postController.ReplyRequest):
+def create_reply(post_id: int, req: ReplyRequest):
     post_id = postController.createReply(req, post_id)
     return {"post_id": post_id, "message": "reply created"}
 
 @router.patch("/details/{post_id}/reply/{r_id}")
-def edit_reply(post_id: int, r_id:int, req: postController.ReplyRequest):
+def edit_reply(post_id: int, r_id:int, req: ReplyRequest):
     r_id = postController.editReply(post_id, r_id, req)
     return r_id
 
