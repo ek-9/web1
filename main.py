@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from router import users, post
+from week9.router import postRouter, usersRouter
 
 app = FastAPI()
-app.include_router(users.router)
-app.include_router(post.router)
+app.include_router(usersRouter.router)
+app.include_router(postRouter.router)
 
 @app.get("/")
 def main() :

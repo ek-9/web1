@@ -1,7 +1,5 @@
-from fastapi import FastAPI, APIRouter
-from controller import userController
-from controller import postController
-
+from fastapi import APIRouter
+from week9.controller import postController
 
 '''
 Posts
@@ -13,6 +11,12 @@ Posts
 6. 댓글 달기
 7. 댓글 수정
 8. 댓글 삭제
+
+Restful API
+1. 자원의 계층 구조를 URL로 표현
+2. 같은 URL에 따라서도 요청방식에 따라 완전히 다른 기능 수행 가능
+
+body(request)에는 변동되는 내용을 넣어서
 '''
 router = APIRouter(prefix= "/post")
 
@@ -41,6 +45,20 @@ def delete(post_id: int):
     return postController.deletePost(post_id)
 
 @router.post("/details/{post_id}/reply")
-def create_reply(post_id: int, req: postController.Reply):
+def create_reply(post_id: int, req: postController.ReplyRequest):
     post_id = postController.createReply(req, post_id)
     return {"post_id": post_id, "message": "reply created"}
+
+@router.patch("/details/{post_id}/reply/{r_id}")
+def edit_reply(post_id: int, r_id:int, req: postController.ReplyRequest):
+    r_id = postController.editReply(post_id, r_id, req)
+    return r_id
+
+@router.delete("/details/{post_id}/reply/{r_id}")
+def delete_reply(post_id: int, r_id: int):
+    postController.deleteReply(post_id, r_id)
+    return
+
+@router.post("/details/{post_id}/like")
+def like(user_id: int, post_id:int) :
+    return postController.increaseLiked(user_id, post_id)

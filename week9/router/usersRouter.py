@@ -1,6 +1,7 @@
-from fastapi.responses import JSONResponse
-from fastapi import APIRouter, HTTPException, status
-from controller import userController
+from fastapi import APIRouter, UploadFile, Form, File
+from week9.controller import userController
+import os
+from pydantic import BaseModel, EmailStr, Field
 
 '''
 HTTPException : 에러를 발생시켜 FastAPI에게 알아서 에러 응답을 만들라고 하는 것/ 에러 상황을 명확히 알림
@@ -25,8 +26,17 @@ return : user_id
 401 : 이메일 or 비밀번호 null
 '''
 @router.post("/create")
-def createUser(request: userController.UserRequest):
-    user_id = userController.createUser(request)
+def createUser(
+        email: EmailStr = Form(...),
+        password: str = Form(...),
+        nickname: str = Form(...),
+        profile_image: UploadFile = File(None)) :
+    req = userController.UserRequest(
+        email = email,
+        password=password,
+        nickname=nickname
+    )
+    user_id = userController.createUser(req, profile_image)
     # return user_id
     return {"user_id": user_id}
 
@@ -50,6 +60,10 @@ def editUser(user_id: int, request: userController.EditUserRequest):
     editUser_id = userController.editUser(user_id, request)
     return {"user_id": editUser_id}
 
+@router.patch("edit/password/{user_id}")
+def edit_user_password(user_id: int, request: userController.EditUserPasswordRequest):
+    editUser_id = userController.editpw(user_id, request)
+    return {"user_id": editUser_id}
 
 @router.delete("/delete/{user_id}")
 def deleteUser(user_id: int):
