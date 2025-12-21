@@ -1,18 +1,22 @@
-from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
+from week9.config.database import Base
+from sqlalchemy.types import JSON
+from sqlalchemy.orm import relationship
 
-class User(BaseModel):
-    '''
-    email,
-    password,
-    nickname
-    '''
-    user_id: int
-    email: EmailStr
-    # 8~20자, 대문자, 소문자, 숫자, 특수문자 하나씩 갖고 있어야함
-    password: str = Field(min_length=8,max_length=20)
-    # 닉네임 : 공백 없어야함, 10글자 이내
-    nickname: str = Field(max_length=20)
-    # 프로필 이미지 경로 저장
-    profile_image: str
-    # 좋아요 누른 게시글 목록 저장
-    post_like: list = []
+class User(Base):
+    __tablename__ = "users"
+
+    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    password = Column(String(255), nullable=False)
+    nickname = Column(String(20), unique=True, nullable=False)
+    profile_image = Column(String(255))
+
+    posts = relationship("Post", back_populates="author")
+
+    # 작성한 댓글
+    comments = relationship("Comment", back_populates="user")
+
+    # 좋아하는 게시글 -> N : N 구조 별도, 테이블 생성
+    likes = relationship("PostLike", back_populates="user")
